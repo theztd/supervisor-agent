@@ -1,0 +1,19 @@
+version: '3'
+services:
+  postgresql:
+    image: postgres:latest
+    environment:
+      # create a database develop with user and pasword
+      POSTGRES_USER: develop
+      POSTGRES_PASSWORD: developPassword
+      POSTGRES_DB: develop
+      # set superuser password
+    ports:
+      - 5432:5432
+
+  supervisord:
+    image: ztd/supervisord
+    volumes:
+      - ./jobs:/etc/supervisor/conf.d
+    ports:
+      - 9001:9001

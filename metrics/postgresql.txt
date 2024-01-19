@@ -1,0 +1,4 @@
+# HELP supervisord_agent_postgresql_ping Ping of PostgreSQL database 1 = UP
+# TYPE supervisord_agent_postgresql_ping Ping of PostgreSQL gauge
+supervisord_agent_postgresql_ping{} 1
+supervisord_agent_postgresql_ping{} 0

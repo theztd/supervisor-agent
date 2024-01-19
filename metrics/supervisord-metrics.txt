@@ -1,0 +1,4 @@
+# HELP supervisord_agent_service_uptime  Uptime of given service
+# TYPE supervisord_agent_service_uptime gauge
+supervisord_agent_service_uptime{service_name="checkDirSize:00", status="RUNNING" } 30
+supervisord_agent_service_uptime{service_name="checkOOMKills:00", status="RUNNING" } 20
