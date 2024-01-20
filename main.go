@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"theztd/supervisor-agent/checks"
 	"theztd/supervisor-agent/exporter"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -50,15 +51,17 @@ func main() {
 		checkInterval, _ = strconv.Atoi(ev)
 	}
 
+	log.Println("DEBUG [INIT]:", dsn)
+
 	server := exporter.Server{
-		RootDir:      checks.MetricsDir,
 		Port:         port,
 		BaseAuthPath: "",
+		Metrics:      &exporter.Metrics{},
 	}
+	server.Metrics.StartTime = int(time.Now().UnixMilli())
 
-	checks.MetricsDir = "./metrics"
-	go checks.GetSupervisordJobsUptime(supervisorUrl, 5)
-	go checks.PgPing(dsn, pgScript, 5)
+	go checks.GetSupervisordJobsUptime(server.Metrics, supervisorUrl, 5)
+	go checks.PgPing(server.Metrics, dsn, pgScript, 5)
 
 	server.Run()
 }

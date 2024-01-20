@@ -3,13 +3,13 @@ package checks
 import (
 	"fmt"
 	"log"
-	"os"
+	"theztd/supervisor-agent/exporter"
 	"time"
 
 	"github.com/abrander/go-supervisord"
 )
 
-func GetSupervisordJobsUptime(url string, interval time.Duration) {
+func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval time.Duration) {
 	log.Println("INFO [checks.supervisord]: Starting supervisord checks...")
 	for {
 		c, err := supervisord.NewClient(url)
@@ -23,21 +23,22 @@ func GetSupervisordJobsUptime(url string, interval time.Duration) {
 			log.Println(err.Error())
 		}
 
-		metricsFile, err := os.Create(MetricsDir + "/jobs.txt")
-		if err != nil {
-			log.Println("ERR [checks.supervisord]: Unable to open metrics file...")
-			log.Println(err.Error())
-		}
-
-		metricsFile.WriteString("# HELP supervisord_agent_service_uptime Uptime of given service\n")
-		metricsFile.WriteString("# TYPE supervisord_agent_service_uptime gauge\n")
+		results := []string{}
+		results = append(results, "# HELP supervisord_agent_service_uptime Uptime of given service\n")
+		results = append(results, "# TYPE supervisord_agent_service_uptime gauge\n")
 
 		for _, svc := range svcs {
 			svcUptime := svc.Now - svc.Start
-			metricsFile.WriteString(fmt.Sprintf("supervisord_agent_service_uptime{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, svcUptime))
+			results = append(
+				results,
+				fmt.Sprintf("supervisord_agent_service_uptime{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, svcUptime),
+			)
 		}
 
-		metricsFile.Close()
+		metrics.Mutex.Lock()
+		metrics.SupTasks = results
+		metrics.Mutex.Unlock()
+
 		time.Sleep(interval * time.Second)
 	}
 }

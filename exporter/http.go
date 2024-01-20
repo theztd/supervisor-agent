@@ -1,66 +1,55 @@
 package exporter
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"os"
+	"sync"
+	"time"
 )
 
 var (
-	RootDir      = "/path/to/files"
-	Port         = ":8080"
-	baseAuthPath = ""
+	Port = ":8080"
 )
 
+type Metrics struct {
+	Mutex     sync.Mutex
+	StartTime int
+	SupTasks  []string
+	Database  []string
+}
+
 type Server struct {
-	RootDir      string
 	Port         string
 	BaseAuthPath string
+	Metrics      *Metrics
 }
 
 func (s *Server) Run() {
-	log.Println("INFO [exporter]: Starting server...")
-	log.Println("INFO [exporter]: Serving files from " + s.RootDir + " on port " + s.Port)
+	log.Println("INFO [exporter]: Server listen on http://0.0.0.0" + s.Port + "/metrics/ ...")
 
-	http.Handle("/metrics/", basicAuth(http.StripPrefix("/metrics/", http.FileServer(http.Dir(s.RootDir)))))
-	// http.Handle("/metrics/", basicAuth(http.FileServer(http.Dir(s.RootDir))))
-	log.Fatalln(http.ListenAndServe(s.Port, nil))
-}
+	http.HandleFunc("/metrics/", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("INFO [exporter]: Request from ", r.RemoteAddr, " to ", r.URL.Path)
+		w.Header().Set("Content-Type", "text/plain")
 
-func basicAuth(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(baseAuthPath) < 1 {
-			// Skip authentication
-			handler.ServeHTTP(w, r)
-			return
+		uptime := int(time.Now().UnixMilli()) - s.Metrics.StartTime
+
+		fmt.Fprint(w, "# HELP supervisord_agent_uptime Exporter's uptime in miliseconds.\n")
+		fmt.Fprint(w, "# TYPE supervisord_agent_uptime gauge\n")
+		fmt.Fprint(w, fmt.Sprintf("supervisord_agent_uptime{} %d\n", uptime))
+
+		// Lock the metrics to prevent concurrent accesss
+		s.Metrics.Mutex.Lock()
+		// Write the metrics to the response writer
+		for _, l := range s.Metrics.SupTasks {
+			fmt.Fprint(w, l)
 		}
-
-		username, password, ok := r.BasicAuth()
-		if !ok || !verifyUserAndPassword(username, password) {
-			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized.\n"))
-			log.Println("WARNING [exporter]: Unauthorized access to metrics.")
-			return
+		for _, l := range s.Metrics.Database {
+			fmt.Fprint(w, l)
 		}
-
-		handler.ServeHTTP(w, r)
+		// Unlock the metrics
+		s.Metrics.Mutex.Unlock()
 	})
-}
 
-func verifyUserAndPassword(user, password string) bool {
-	// Read logins from htpasswd file
-	file, err := os.Open(baseAuthPath)
-	if err != nil {
-		return false
-	}
-	defer file.Close()
-
-	/*
-
-		Implement ME
-
-	*/
-
-	return true
+	log.Fatalln(http.ListenAndServe(s.Port, nil))
 }
