@@ -17,3 +17,4 @@ services:
       - ./jobs:/etc/supervisor/conf.d
     ports:
       - 9001:9001
+      - 8080:8080

@@ -24,10 +24,23 @@ func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval ti
 		}
 
 		results := []string{}
+		results = append(results, "# HELP supervisord_agent_service_rss_bytes Memory consumption of process in Bytes\n")
+		results = append(results, "# TYPE supervisord_agent_service_rss_bytes gauge\n")
 		results = append(results, "# HELP supervisord_agent_service_uptime Uptime of given service\n")
 		results = append(results, "# TYPE supervisord_agent_service_uptime gauge\n")
 
 		for _, svc := range svcs {
+			memBytes, err := getMemoryUsageBytes(svc.Pid)
+			if err != nil {
+				memBytes = 0
+				log.Println("ERR [checks.supervisord]: Unable to get memmory ussage for supervisord job", svc.Group, svc.Name, "with PID", svc.Pid)
+				log.Println(err.Error())
+			}
+			results = append(
+				results,
+				fmt.Sprintf("supervisord_agent_service_rss_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, memBytes),
+			)
+
 			svcUptime := svc.Now - svc.Start
 			results = append(
 				results,
