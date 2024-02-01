@@ -13,8 +13,10 @@ services:
 
   supervisord:
     image: ztd/supervisord
+    build: ./supervisor
     volumes:
       - ./jobs:/etc/supervisor/conf.d
+      - ./bin:/usr/local/bin/
     ports:
       - 9001:9001
       - 8080:8080
