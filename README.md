@@ -7,18 +7,21 @@ Application exports supervisord managed job's uptime to at **http://0.0.0.0:${PO
 ```bash
 Usage supervisor-agent:
   -check-interval int
-        Interval between checks in seconds (CHECK_INTERVAL). (default 30)
+        Interval between checks in seconds. (default 30)
+  -metrics-dir string
+        Directory where metrics will be stored (METRICS_DIR). (default "./metrics")
   -pg-dsn string
-        PostgreSQL DSN (PG_DSN). Example "user=username dbname=mydb sslmode=disable"
+        PostgreSQL DSN (PG_DSN). Example: "user=username dbname=mydb sslmode=disable"
   -pg-script string
-        Script that be executed when PostgreSQL is not available (PG_SCRIPT). Example "./reload-jobs.sh"
+        Script that be executed when PostgreSQL is not available (PG_SCRIPT). Example: ./path_to_restart_script.sh
   -port string
         Exporter listening port (PORT). (default ":8080")
   -supervisor-url string
         RPC Supervisor interface URL (SUPERVISOR_URL). (default "http://127.0.0.1:9001/RPC2")
 ```
 
-The arguments -pg-dsn and -pg-script have to be defined to enable pgPing check.
+ * The arguments -pg-dsn and -pg-script have to be defined to enable pgPing check.
+ * The check interval is not possible to set via ENV variable.
 
 
 ## Example
