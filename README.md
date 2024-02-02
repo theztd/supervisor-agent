@@ -9,14 +9,17 @@ Usage supervisor-agent:
   -check-interval int
         Interval between checks in seconds (CHECK_INTERVAL). (default 30)
   -pg-dsn string
-        PostgreSQL DSN (PG_DSN). (default "user=username dbname=mydb sslmode=disable")
+        PostgreSQL DSN (PG_DSN). Example "user=username dbname=mydb sslmode=disable"
   -pg-script string
-        Script that be executed when PostgreSQL is not available (PG_SCRIPT). (default "./reload-jobs.sh")
+        Script that be executed when PostgreSQL is not available (PG_SCRIPT). Example "./reload-jobs.sh"
   -port string
         Exporter listening port (PORT). (default ":8080")
   -supervisor-url string
         RPC Supervisor interface URL (SUPERVISOR_URL). (default "http://127.0.0.1:9001/RPC2")
 ```
+
+The arguments -pg-dsn and -pg-script have to be defined to enable pgPing check.
+
 
 ## Example
 

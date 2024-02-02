@@ -24,8 +24,8 @@ func main() {
 	log.Println("INFO: Starting application...")
 
 	flag.StringVar(&checks.MetricsDir, "metrics-dir", "./metrics", "Directory where metrics will be stored (METRICS_DIR).")
-	flag.StringVar(&dsn, "pg-dsn", "user=username dbname=mydb sslmode=disable", "PostgreSQL DSN (PG_DSN).")
-	flag.StringVar(&pgScript, "pg-script", "./reload-jobs.sh", "Script that be executed when PostgreSQL is not available (PG_SCRIPT).")
+	flag.StringVar(&dsn, "pg-dsn", "", "PostgreSQL DSN (PG_DSN). Example: \"user=username dbname=mydb sslmode=disable\"")
+	flag.StringVar(&pgScript, "pg-script", "", "Script that be executed when PostgreSQL is not available (PG_SCRIPT).")
 	flag.StringVar(&port, "port", ":8080", "Exporter listening port (PORT).")
 	flag.StringVar(&supervisorUrl, "supervisor-url", "http://127.0.0.1:9001/RPC2", "RPC Supervisor interface URL (SUPERVISOR_URL).")
 	flag.IntVar(&checkInterval, "check-interval", 30, "Interval between checks in seconds (CHECK_INTERVAL).")
@@ -61,7 +61,10 @@ func main() {
 	server.Metrics.StartTime = int(time.Now().UnixMilli())
 
 	go checks.GetSupervisordJobsUptime(server.Metrics, supervisorUrl, 5)
-	go checks.PgPing(server.Metrics, dsn, pgScript, 5)
+
+	if dsn != "" && pgScript != "" {
+		go checks.PgPing(server.Metrics, dsn, pgScript, 5)
+	}
 
 	server.Run()
 }
