@@ -17,11 +17,13 @@ func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval ti
 			log.Println("ERR [checks.supervisord]: Unable to connect supervisord...")
 			// panic(err.Error())
 		}
+
 		svcs, err := c.GetAllProcessInfo()
 		if err != nil {
 			log.Println("ERR [checks.supervisord]: Unable to get status of supervisord jobs...")
 			log.Println(err.Error())
 		}
+		c.Close()
 
 		results := []string{}
 		results = append(results, "# HELP supervisord_agent_service_rss_bytes Memory consumption of process in Bytes\n")
@@ -30,7 +32,7 @@ func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval ti
 		results = append(results, "# TYPE supervisord_agent_service_uptime gauge\n")
 
 		for _, svc := range svcs {
-			memBytes, err := getMemoryUsageBytes(svc.Pid)
+			memBytes, err := GetMemoryUsageBytes(svc.Pid)
 			if err != nil {
 				memBytes = 0
 				log.Println("ERR [checks.supervisord]: Unable to get memmory ussage for supervisord job", svc.Group, svc.Name, "with PID", svc.Pid)

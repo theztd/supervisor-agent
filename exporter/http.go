@@ -36,7 +36,7 @@ func (s *Server) Run() {
 
 		fmt.Fprint(w, "# HELP supervisord_agent_uptime Exporter's uptime in miliseconds.\n")
 		fmt.Fprint(w, "# TYPE supervisord_agent_uptime gauge\n")
-		fmt.Fprint(w, fmt.Sprintf("supervisord_agent_uptime{} %d\n", uptime))
+		fmt.Fprintf(w, "supervisord_agent_uptime{} %d\n", uptime)
 
 		// Lock the metrics to prevent concurrent accesss
 		s.Metrics.Mutex.Lock()
@@ -47,6 +47,7 @@ func (s *Server) Run() {
 		for _, l := range s.Metrics.Database {
 			fmt.Fprint(w, l)
 		}
+
 		// Unlock the metrics
 		s.Metrics.Mutex.Unlock()
 	})

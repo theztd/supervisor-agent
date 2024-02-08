@@ -1,0 +1,17 @@
+{
+	"ulid": "01HP54QW3SW8EA85DT05PXGSF8",
+	"minTime": 1707411442650,
+	"maxTime": 1707415200000,
+	"stats": {
+		"numSamples": 2990,
+		"numSeries": 30,
+		"numChunks": 44
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HP54QW3SW8EA85DT05PXGSF8"
+		]
+	},
+	"version": 1
+}

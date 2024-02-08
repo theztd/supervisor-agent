@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	_ "net/http/pprof"
 	"os"
 	"theztd/supervisor-agent/checks"
 	"theztd/supervisor-agent/exporter"
@@ -50,11 +51,12 @@ func main() {
 	}
 	server.Metrics.StartTime = int(time.Now().UnixMilli())
 
-	go checks.GetSupervisordJobsUptime(server.Metrics, supervisorUrl, 5)
+	go checks.GetSupervisordJobsUptime(server.Metrics, supervisorUrl, time.Duration(checkInterval))
 
 	if dsn != "" && pgScript != "" {
-		go checks.PgPing(server.Metrics, dsn, pgScript, 5)
+		go checks.PgPing(server.Metrics, dsn, pgScript, time.Duration(checkInterval))
 	}
 
+	// go server.Debug()
 	server.Run()
 }
