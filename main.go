@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	_ "net/http/pprof"
 	"os"
@@ -18,6 +19,7 @@ var (
 	supervisorUrl string
 	pgScript      string
 	checkInterval int
+	info          bool
 )
 
 func GetEnv(name, def string) string {
@@ -32,16 +34,23 @@ func GetEnv(name, def string) string {
 }
 
 func main() {
-	log.Println("INFO: Starting application...")
-
 	flag.StringVar(&checks.MetricsDir, "metrics-dir", GetEnv("METRICS_DIR", "./metrics"), "Directory where metrics will be stored (METRICS_DIR).")
 	flag.StringVar(&dsn, "pg-dsn", GetEnv("PG_DSN", ""), "PostgreSQL DSN (PG_DSN). Example: \"user=username dbname=mydb sslmode=disable\"")
 	flag.StringVar(&pgScript, "pg-script", GetEnv("PG_SCRIPT", ""), "Script that be executed when PostgreSQL is not available (PG_SCRIPT). Example: ./path_to_restart_script.sh")
 	flag.StringVar(&port, "port", GetEnv("PORT", ":8080"), "Exporter listening port (PORT).")
 	flag.StringVar(&supervisorUrl, "supervisor-url", GetEnv("SUPERVISOR_URL", "http://127.0.0.1:9001/RPC2"), "RPC Supervisor interface URL (SUPERVISOR_URL).")
 	flag.IntVar(&checkInterval, "check-interval", 30, "Interval between checks in seconds.")
+	flag.BoolVar(&info, "version", false, "Print information about version and exits (5).")
 	flag.Parse()
 
+	if info {
+		fmt.Printf("supervisor-agent (version: %s)\n", VERSION)
+		fmt.Println("")
+		flag.PrintDefaults()
+		os.Exit(5)
+	}
+
+	log.Printf("INFO: Starting application (version: %s)...", VERSION)
 	log.Println("DEBUG [INIT]:", dsn)
 
 	server := exporter.Server{
