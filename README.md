@@ -2,12 +2,21 @@
 
 Application exports supervisord managed job's uptime to at **http://0.0.0.0:${PORT}/metrics/** url. The second function of this application is to monitor postgresql and run defined script (for example reload all services, ...) when postgresql is not available after 3 checks in row.
 
+## Routes
+
+```bash
+/metrics/    ... prometheus exporter
+/_healthz/   ... health check returning 200 / 503
+```
+
 ## Usage
 
 ```bash
 Usage supervisor-agent:
   -check-interval int
         Interval between checks in seconds. (default 30)
+  -health-uptime int
+        Minimal jobs uptime to set healthz endpoint to healthy state (return 200). (default 5)
   -metrics-dir string
         Directory where metrics will be stored (METRICS_DIR). (default "./metrics")
   -pg-dsn string
@@ -18,6 +27,8 @@ Usage supervisor-agent:
         Exporter listening port (PORT). (default ":8080")
   -supervisor-url string
         RPC Supervisor interface URL (SUPERVISOR_URL). (default "http://127.0.0.1:9001/RPC2")
+  -version
+        Print information about version and exits (5).
 ```
 
  * The arguments -pg-dsn and -pg-script have to be defined to enable pgPing check.

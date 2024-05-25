@@ -3,6 +3,7 @@ package checks
 import (
 	"fmt"
 	"log"
+	"slices"
 	"theztd/supervisor-agent/exporter"
 	"time"
 
@@ -11,7 +12,10 @@ import (
 
 func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval time.Duration) {
 	log.Println("INFO [checks.supervisord]: Starting supervisord checks...")
+
 	for {
+		uptimes := []int{}
+		fmt.Println("UPTIMES:", uptimes)
 		c, err := supervisord.NewClient(url)
 		if err != nil {
 			log.Println("ERR [checks.supervisord]: Unable to connect supervisord...")
@@ -48,10 +52,21 @@ func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval ti
 				results,
 				fmt.Sprintf("supervisord_agent_service_uptime{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, svcUptime),
 			)
+			uptimes = append(uptimes, svcUptime)
+
+			log.Println("INFO [checks.supervisord]: Svc", svc.Name, "uptime is", svcUptime, "used memmory is", memBytes)
+
 		}
+		results = append(results, "# HELP supervisord_agent_lowest_service_uptime The lowest uptime of all managed supervisord jobs\n")
+		results = append(results, "# TYPE supervisord_agent_lowest_service_uptime gauge\n")
+		results = append(
+			results,
+			fmt.Sprintf("supervisord_agent_lowest_uptime{} %d\n", slices.Min(uptimes)),
+		)
 
 		metrics.Mutex.Lock()
 		metrics.SupTasks = results
+		metrics.LowestUptime = slices.Min(uptimes)
 		metrics.Mutex.Unlock()
 
 		time.Sleep(interval * time.Second)

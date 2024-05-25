@@ -22,3 +22,4 @@ go.work
 
 build/*
 devel/data/*
+devel/bin/
