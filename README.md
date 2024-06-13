@@ -1,6 +1,6 @@
 # supervisor-agent
 
-Application exports supervisord managed job's uptime to at **http://0.0.0.0:${PORT}/metrics/** url. The second function of this application is to monitor postgresql and run defined script (for example reload all services, ...) when postgresql is not available after 3 checks in row.
+Application exports supervisord managed job's uptime and a few basic metrics (RSS, CPU%, IO R/W) at **http://0.0.0.0:${PORT}/metrics/** url. The second function of this application is to monitor postgresql and run defined script (for example reload all services, ...) when postgresql is not available after 3 checks in row.
 
 ## Routes
 
@@ -16,7 +16,7 @@ Usage supervisor-agent:
   -check-interval int
         Interval between checks in seconds. (default 30)
   -health-uptime int
-        Minimal jobs uptime to set healthz endpoint to healthy state (return 200). (default 5)
+        Minimal jobs uptime in seconds to set healthz endpoint to healthy state (return 200). (default 30)
   -metrics-dir string
         Directory where metrics will be stored (METRICS_DIR). (default "./metrics")
   -pg-dsn string

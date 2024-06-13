@@ -1,5 +1,11 @@
 package checks
 
+/*
+	Deprecated and already not used.
+
+	ToDo: Should be removed in next version
+*/
+
 import (
 	"github.com/shirou/gopsutil/process"
 )

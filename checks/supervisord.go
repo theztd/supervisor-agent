@@ -32,19 +32,61 @@ func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval ti
 		results := []string{}
 		results = append(results, "# HELP supervisord_agent_service_rss_bytes Memory consumption of process in Bytes\n")
 		results = append(results, "# TYPE supervisord_agent_service_rss_bytes gauge\n")
+
+		results = append(results, "# HELP supervisord_agent_service_cpu_percent CPU ussage in percent\n")
+		results = append(results, "# TYPE supervisord_agent_service_cpu_percent gauge\n")
+
+		results = append(results, "# HELP supervisord_agent_service_io_read_bytes IO Reads in bytes\n")
+		results = append(results, "# TYPE supervisord_agent_service_io_read_bytes gauge\n")
+
+		results = append(results, "# HELP supervisord_agent_service_io_read_count IO Read operations counter\n")
+		results = append(results, "# TYPE supervisord_agent_service_io_read_count gauge\n")
+
+		results = append(results, "# HELP supervisord_agent_service_io_write_bytes IO Writes in byte\n")
+		results = append(results, "# TYPE supervisord_agent_service_io_write_bytes gauge\n")
+
+		results = append(results, "# HELP supervisord_agent_service_io_write_count IO Write operations counter\n")
+		results = append(results, "# TYPE supervisord_agent_service_io_write_count gauge\n")
+
 		results = append(results, "# HELP supervisord_agent_service_uptime Uptime of given service\n")
 		results = append(results, "# TYPE supervisord_agent_service_uptime gauge\n")
 
 		for _, svc := range svcs {
-			memBytes, err := GetMemoryUsageBytes(svc.Pid)
+			procInfo, err := GetProcessInfo(svc.Pid)
+			//memBytes, err := GetMemoryUsageBytes(svc.Pid)
 			if err != nil {
-				memBytes = 0
-				log.Println("ERR [checks.supervisord]: Unable to get memmory ussage for supervisord job", svc.Group, svc.Name, "with PID", svc.Pid)
+				log.Println("ERR [checks.supervisord]: Unable to get metrics for supervisord job", svc.Group, svc.Name, "with PID", svc.Pid)
 				log.Println(err.Error())
 			}
+			// RSS
 			results = append(
 				results,
-				fmt.Sprintf("supervisord_agent_service_rss_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, memBytes),
+				fmt.Sprintf("supervisord_agent_service_rss_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.Memory.RSS),
+			)
+			// CPU
+			results = append(
+				results,
+				fmt.Sprintf("supervisord_agent_service_cpu_percent{service_name=\"%s:%s\", status=\"%s\" } %f\n", svc.Group, svc.Name, svc.StateName, procInfo.CPUPercent),
+			)
+			// IO read Bytes
+			results = append(
+				results,
+				fmt.Sprintf("supervisord_agent_service_io_read_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.ReadBytes),
+			)
+			// IO read Count
+			results = append(
+				results,
+				fmt.Sprintf("supervisord_agent_service_io_read_count{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.ReadCount),
+			)
+			// IO write Bytes
+			results = append(
+				results,
+				fmt.Sprintf("supervisord_agent_service_io_write_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.WriteBytes),
+			)
+			// IO write Count
+			results = append(
+				results,
+				fmt.Sprintf("supervisord_agent_service_io_write_count{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.WriteCount),
 			)
 
 			svcUptime := svc.Now - svc.Start
@@ -54,7 +96,7 @@ func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval ti
 			)
 			uptimes = append(uptimes, svcUptime)
 
-			log.Println("INFO [checks.supervisord]: Svc", svc.Name, "uptime is", svcUptime, "used memmory is", memBytes)
+			log.Println("INFO [checks.supervisord]: Svc", svc.Name, "uptime is", svcUptime)
 
 		}
 		results = append(results, "# HELP supervisord_agent_lowest_service_uptime The lowest uptime of all managed supervisord jobs\n")

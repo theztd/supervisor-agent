@@ -41,7 +41,7 @@ func main() {
 	flag.StringVar(&port, "port", GetEnv("PORT", ":8080"), "Exporter listening port (PORT).")
 	flag.StringVar(&supervisorUrl, "supervisor-url", GetEnv("SUPERVISOR_URL", "http://127.0.0.1:9001/RPC2"), "RPC Supervisor interface URL (SUPERVISOR_URL).")
 	flag.IntVar(&checkInterval, "check-interval", 30, "Interval between checks in seconds.")
-	flag.IntVar(&minimalHelthyTime, "health-uptime", 5, "Minimal jobs uptime to set healthz endpoint to healthy state (return 200).")
+	flag.IntVar(&minimalHelthyTime, "health-uptime", 30, "Minimal jobs uptime in seconds to set healthz endpoint to healthy state (return 200).")
 	flag.BoolVar(&info, "version", false, "Print information about version and exits (5).")
 	flag.Parse()
 
