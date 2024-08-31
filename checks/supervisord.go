@@ -51,65 +51,70 @@ func GetSupervisordJobsUptime(metrics *exporter.Metrics, url string, interval ti
 		results = append(results, "# HELP supervisord_agent_service_uptime Uptime of given service\n")
 		results = append(results, "# TYPE supervisord_agent_service_uptime gauge\n")
 
-		for _, svc := range svcs {
-			procInfo, err := GetProcessInfo(svc.Pid)
-			//memBytes, err := GetMemoryUsageBytes(svc.Pid)
-			if err != nil {
-				log.Println("ERR [checks.supervisord]: Unable to get metrics for supervisord job", svc.Group, svc.Name, "with PID", svc.Pid)
-				log.Println(err.Error())
+		if len(svcs) > 0 {
+
+			for _, svc := range svcs {
+				procInfo, err := GetProcessInfo(svc.Pid)
+				//memBytes, err := GetMemoryUsageBytes(svc.Pid)
+				if err != nil {
+					log.Println("ERR [checks.supervisord]: Unable to get metrics for supervisord job", svc.Group, svc.Name, "with PID", svc.Pid)
+					log.Println(err.Error())
+				}
+				// RSS
+				results = append(
+					results,
+					fmt.Sprintf("supervisord_agent_service_rss_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.Memory.RSS),
+				)
+				// CPU
+				results = append(
+					results,
+					fmt.Sprintf("supervisord_agent_service_cpu_percent{service_name=\"%s:%s\", status=\"%s\" } %f\n", svc.Group, svc.Name, svc.StateName, procInfo.CPUPercent),
+				)
+				// IO read Bytes
+				results = append(
+					results,
+					fmt.Sprintf("supervisord_agent_service_io_read_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.ReadBytes),
+				)
+				// IO read Count
+				results = append(
+					results,
+					fmt.Sprintf("supervisord_agent_service_io_read_count{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.ReadCount),
+				)
+				// IO write Bytes
+				results = append(
+					results,
+					fmt.Sprintf("supervisord_agent_service_io_write_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.WriteBytes),
+				)
+				// IO write Count
+				results = append(
+					results,
+					fmt.Sprintf("supervisord_agent_service_io_write_count{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.WriteCount),
+				)
+
+				svcUptime := svc.Now - svc.Start
+				results = append(
+					results,
+					fmt.Sprintf("supervisord_agent_service_uptime{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, svcUptime),
+				)
+				uptimes = append(uptimes, svcUptime)
+
+				log.Println("INFO [checks.supervisord]: Svc", svc.Name, "uptime is", svcUptime)
+
 			}
-			// RSS
+			results = append(results, "# HELP supervisord_agent_lowest_service_uptime The lowest uptime of all managed supervisord jobs\n")
+			results = append(results, "# TYPE supervisord_agent_lowest_service_uptime gauge\n")
 			results = append(
 				results,
-				fmt.Sprintf("supervisord_agent_service_rss_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.Memory.RSS),
-			)
-			// CPU
-			results = append(
-				results,
-				fmt.Sprintf("supervisord_agent_service_cpu_percent{service_name=\"%s:%s\", status=\"%s\" } %f\n", svc.Group, svc.Name, svc.StateName, procInfo.CPUPercent),
-			)
-			// IO read Bytes
-			results = append(
-				results,
-				fmt.Sprintf("supervisord_agent_service_io_read_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.ReadBytes),
-			)
-			// IO read Count
-			results = append(
-				results,
-				fmt.Sprintf("supervisord_agent_service_io_read_count{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.ReadCount),
-			)
-			// IO write Bytes
-			results = append(
-				results,
-				fmt.Sprintf("supervisord_agent_service_io_write_bytes{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.WriteBytes),
-			)
-			// IO write Count
-			results = append(
-				results,
-				fmt.Sprintf("supervisord_agent_service_io_write_count{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, procInfo.IO.WriteCount),
+				fmt.Sprintf("supervisord_agent_lowest_uptime{} %d\n", slices.Min(uptimes)),
 			)
 
-			svcUptime := svc.Now - svc.Start
-			results = append(
-				results,
-				fmt.Sprintf("supervisord_agent_service_uptime{service_name=\"%s:%s\", status=\"%s\" } %d\n", svc.Group, svc.Name, svc.StateName, svcUptime),
-			)
-			uptimes = append(uptimes, svcUptime)
-
-			log.Println("INFO [checks.supervisord]: Svc", svc.Name, "uptime is", svcUptime)
-
+			metrics.Mutex.Lock()
+			metrics.SupTasks = results
+			metrics.LowestUptime = slices.Min(uptimes)
+			metrics.Mutex.Unlock()
+		} else {
+			log.Println("INFO [checks.supervisord]: There are no supervisor jobs defined.")
 		}
-		results = append(results, "# HELP supervisord_agent_lowest_service_uptime The lowest uptime of all managed supervisord jobs\n")
-		results = append(results, "# TYPE supervisord_agent_lowest_service_uptime gauge\n")
-		results = append(
-			results,
-			fmt.Sprintf("supervisord_agent_lowest_uptime{} %d\n", slices.Min(uptimes)),
-		)
-
-		metrics.Mutex.Lock()
-		metrics.SupTasks = results
-		metrics.LowestUptime = slices.Min(uptimes)
-		metrics.Mutex.Unlock()
 
 		time.Sleep(interval * time.Second)
 	}
